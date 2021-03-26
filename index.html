@@ -154,12 +154,61 @@ p(\hat{\delta}) = \exp\left[ - \int \frac{|\hat{\delta}(\boldsymbol{k})|^2}{2 P(
 <h3 id="generating-realizations">Generating realizations</h3>
 <p>In the analysis above, we observe that Gaussian random fields are most easily expressed in terms of Fourier space as the exponent of the distribution is diagonal in <span class="math inline">\(\hat{\delta}\)</span>. Note that the Fourier transform of a real-valued function <span class="math inline">\(\delta:\mathbb{R}^d \to \mathbb{R}\)</span> satisfies the condition <span class="math inline">\(\hat{\delta}(\boldsymbol{k}) = \hat{\delta}^*(-\boldsymbol{k})\)</span>.</p>
 <p>Generating a realization of a Gaussian random field on a regular lattice <span class="math inline">\(\{ \boldsymbol{q}_{i_1,\dots,i_d}\}\)</span>, with the values <span class="math inline">\(\delta_{i_1,\dots,i_d} = \delta(\boldsymbol{q}_{i_1,\dots,i_d})\)</span>, can thus be reduced to drawing the normally distributed Fourier modes <span class="math inline">\(\hat{\delta}_{i_1,\dots,i_d}\)</span> with the reality condition <span class="math inline">\(\hat{\delta}^*_{-i_1,\dots,-i_d} = \hat{\delta}_{i_1,\dots,i_d}\)</span>. The realization <span class="math inline">\(\{\delta_{i_1,\dots,i_d}\}\)</span> are can be efficiently evaluated with the inverse fast Fourier transform.</p>
-<p>These observations allow for an efficient algorithm for the generation of Gaussian random fields:</p>
+<p>These observations allow for an efficient algorithm for the generation of unconstrained Gaussian random fields:</p>
 <ol type="1">
 <li>White noise: Generate the set of identically distributed random numbers <span class="math inline">\(n_{i_1,\dots,i_d} \sim \mathcal{N}(0,1)\)</span>.</li>
 <li>Fourier transform the noise: Fast Fourier transform the realization of the white noise <span class="math inline">\(\{\hat{n}_{i_1,\dots,i_d}\} = FFT[\{n_{i_1,\dots,i_d}\}]\)</span>. The Fourier transform consists of complex random numbers with a Gaussian amplitude <span class="math inline">\(\mathcal{N}(0,1)\)</span>, a uniformly distributed argument, satisfying the reality condition <span class="math inline">\(\hat{n}^*_{-i_1,\dots,-i_d} = \hat{n}_{i_1,\dots,i_d}\)</span>.</li>
 <li>Scale the Fourier modes: Define the Fourier modes <span class="math inline">\(\hat{\delta}_{i_1,\dots,i_d} = \sqrt{P(\|\boldsymbol{k}_{i_1,\dots,i_d}\|)}\hat{n}_{i_1,\dots,i_d}\)</span>. The modes <span class="math inline">\(\hat{\delta}_{i_1,\dots,i_d}\)</span> are independent complex random numbers of which the amplitudes are normally distributed <span class="math inline">\(|\hat{\delta}_{i_1,\dots,i_d}| \sim \mathcal{N}(0,\sqrt{P(\|\boldsymbol{k}_{i_1,\dots,i_d}\|)})\)</span> satisfying the reality condition <span class="math inline">\(\hat{\delta}^*_{-i_1,\dots,-i_d} = \hat{\delta}_{i_1,\dots,i_d}\)</span>.</li>
 <li>Transform to real-space: Use the inverse Fourier transform to generate the Gaussian random field <span class="math inline">\(\{ \delta_{i_1,\dots,i_d}\} = FFT^{-1}(\{ \hat{\delta}_{i_1,\dots,i_d}\})\)</span>.</li>
+</ol>
+<h4 id="generating-constrained-realizations">Generating constrained realizations</h4>
+<p>When setting up initial conditions for <span class="math inline">\(N\)</span>-body simulations, it often suffices to construct an unconstrained Gaussian random fields. However, when we want to study the formation of a specific geometric feature it is most efficient to construct a constrained realization which satisfies a set of linear conditions. We will here follow the Hoffman-Ribak method following the notation of Weygaert and Bertschinger (1996).</p>
+<p>We first define the set of <span class="math inline">\(M\)</span> linear constraints <span class="math display">\[
+\Gamma  = \{ C_i \equiv C_i[\delta;\boldsymbol{q}_i = c_i| i = 1,\dots,M\},
+\]</span> at the points <span class="math inline">\(\boldsymbol{q}_i\)</span> and values <span class="math inline">\(c_i \in \mathbb{R}\)</span> for <span class="math inline">\(i=1,\dots, M\)</span>. Note that the linear constraints are either the function value <span class="math display">\[C[\delta;\boldsymbol{q}_i] = \delta(\boldsymbol{q}_i),\]</span> a derivative <span class="math display">\[C[\delta;\boldsymbol{q}_i] = \frac{\partial \delta}{\partial q_i} (\boldsymbol{q}_i),\]</span> or a convolution with some kernel <span class="math inline">\(g\)</span>, <span class="math display">\[C[\delta;\boldsymbol{q}_i] = \int g(\boldsymbol{q}_i - \boldsymbol{q})\delta(\boldsymbol{q}) \mathrm{d}\boldsymbol{q}.\]</span></p>
+<p>Now using Bayes formula, we write the conditional distribution <span class="math display">\[
+p(\delta|\Gamma) = \frac{p(\delta, \Gamma)}{p(\Gamma)} = \frac{p(\delta)}{p(\Gamma)},
+\]</span> where <span class="math inline">\(p(\delta, \Gamma) = p(\delta)\)</span> since <span class="math inline">\(\Gamma\)</span> is a linear functional of <span class="math inline">\(\delta\)</span>. Since the constraints <span class="math inline">\(C_i\)</span> are linear in terms of the Gaussian random field, the distribution <span class="math inline">\(p(\Gamma)\)</span> is again Gaussian, <span class="math display">\[
+p(\Gamma) = \frac{\exp\left[-\frac{1}{2} \boldsymbol{C}^T Q^{-1} \boldsymbol{C}\right]}{\sqrt{(2\pi)^M \det Q}},
+\]</span> with the vector <span class="math inline">\(\boldsymbol{C}=(C_1,\dots,C_M)\)</span> and the covairance matrix <span class="math display">\[
+Q = \left\langle \boldsymbol{C}^T \boldsymbol{C}\right\rangle.
+\]</span> The constrained distribution thus takes the form <span class="math display">\[\begin{align}
+p(\delta|\Gamma)=
+\sqrt{(2\pi)^M \det Q} \ 
+e^{-\frac{1}{2} \left(\iint \delta(\boldsymbol{q}_1) K(\boldsymbol{q}_1-\boldsymbol{q}_2) \delta(\boldsymbol{q}_2) \mathrm{d} \boldsymbol{q}_1 \mathrm{d}\boldsymbol{q}_2 - \boldsymbol{C} Q^{-1} \boldsymbol{C}\right)}.
+\end{align}\]</span></p>
+<p>It is worthwile to simplify this expression a bit further. We can write the constraint as <span class="math display">\[\begin{align}
+C_i(\boldsymbol{q}_i)
+&amp;= \int \delta_D^{(d)}(\boldsymbol{q}_2) C_i(\boldsymbol{q}_i - \boldsymbol{q}_2)  \mathrm{d}\boldsymbol{q}_2\\
+&amp;= \iint \xi(\boldsymbol{q}_1) K(\boldsymbol{q}_1 - \boldsymbol{q}_2) C_i(\boldsymbol{q}_i - \boldsymbol{q}_2) \mathrm{d}\boldsymbol{q}_1\mathrm{d}\boldsymbol{q}_2\\
+&amp;= \int \hat{C}_i(\boldsymbol{k}) P(k) \hat{K}(\boldsymbol{k}) e^{-i \boldsymbol{k} \cdot \boldsymbol{q}_i} \frac{\mathrm{d}\boldsymbol{k}}{(2\pi)^d},
+\end{align}\]</span> with the power spectrum <span class="math inline">\(P(k)\)</span>, the Fourier transforms <span class="math inline">\(\hat{K}\)</span> and <span class="math inline">\(\hat{C}_i\)</span> of the kernel <span class="math inline">\(K\)</span> and the constraint <span class="math inline">\(C_i\)</span>. If we now define the function <span class="math inline">\(\hat{P}_i(\boldsymbol{k})\)</span> by <span class="math display">\[
+(2\pi)^d \hat{P}_i(\boldsymbol{k}_1) \delta_D^{(d)}(\boldsymbol{k}_1-\boldsymbol{k}_2) = \langle \hat{C}_i(\boldsymbol{k}_1) \hat{\delta}^*(\boldsymbol{k}_2)\rangle
+\]</span> we can obtain a relation between <span class="math inline">\(\hat{\delta}\)</span> and <span class="math inline">\(\hat{C}_i\)</span>, <span class="math display">\[
+\hat{C}_i(\boldsymbol{k}) = \frac{\hat{P}_i(\boldsymbol{k})}{P(k)} \hat{\delta}(\boldsymbol{k}).
+\]</span> Substituting this equation in the constraint <span class="math inline">\(C_i\)</span>, we obtain <span class="math display">\[\begin{align}
+C_i(\boldsymbol{q}_i)
+&amp;= \int \hat{\delta}(\boldsymbol{k}) \hat{P}_i(\boldsymbol{k}) \hat{K}(\boldsymbol{k}) e^{-i \boldsymbol{k} \cdot \boldsymbol{q}_i} \frac{\mathrm{d}\boldsymbol{k}}{(2\pi)^d}\\
+&amp;= \int \hat{\delta}(\boldsymbol{k}_1) \hat{K}(\boldsymbol{k}_1) \langle \hat{C}_i(\boldsymbol{k}_1) \hat{\delta}^*(\boldsymbol{k}_2)\rangle e^{-i \boldsymbol{k}_1 \cdot \boldsymbol{q}_i} \frac{\mathrm{d}\boldsymbol{k}_1}{(2\pi)^d}\frac{\mathrm{d}\boldsymbol{k}_2}{(2\pi)^d}\\
+&amp;=\iint \delta(\boldsymbol{q}_1) K(\boldsymbol{q}_1-\boldsymbol{q}_2) \xi_i(\boldsymbol{q}_2)\mathrm{d}\boldsymbol{q}_1\mathrm{d}\boldsymbol{q}_2,
+\end{align}\]</span> where we define <span class="math inline">\(\xi_i\)</span> as the Fourier transform of <span class="math inline">\(\hat{P}_i\)</span>, <span class="math display">\[
+\xi_i(\boldsymbol{q}) = \langle \delta(\boldsymbol{q}) C_i(\boldsymbol{q}_i)\rangle.
+\]</span></p>
+<p>Let <span class="math inline">\(\xi_{ij}\)</span> be the <span class="math inline">\((ij)\)</span>th element of <span class="math inline">\(Q\)</span>. The identity for the constraint can be used to write <span class="math display">\[
+C_i \xi_{ij}^{-1} C_j = \iint \delta(\boldsymbol{q}_1)K(\boldsymbol{q}_1-\boldsymbol{q}_2) \bar{\delta}(\boldsymbol{q}_2)\mathrm{d}\boldsymbol{q}_1 \mathrm{d}\boldsymbol{q}_2,
+\]</span> where we have the mean field <span class="math display">\[
+\bar{\delta}(\boldsymbol{q}) = \xi_i(\boldsymbol{q}) \xi_{ij}^{-1} c_j.
+\]</span> We can use this to write the distribution as<br />
+<span class="math display">\[\begin{align}
+p(\delta|\Gamma)=
+\sqrt{(2\pi)^M \det Q}e^{-\frac{1}{2} \iint F(\boldsymbol{q}_1)K(\boldsymbol{q}_1-\boldsymbol{q}_2) F(\boldsymbol{q}_2)\mathrm{d}\boldsymbol{q}_1\mathrm{d}\boldsymbol{q}_2},
+\end{align}\]</span> where <span class="math inline">\(F\)</span> is the deviation of <span class="math inline">\(\delta\)</span> with respect to the constrained mean field <span class="math inline">\(\bar{\delta}(\boldsymbol{q}) = \langle \delta(\boldsymbol{q}|\Gamma \rangle\)</span>. As a consequence, the residue <span class="math inline">\(F\)</span> is again a Gaussian random field.</p>
+<p>Generating realizations of a constrained Gaussian random field has thus been reduced to constructing a realization of the residue. At first sight, this seems difficult since the residue vanishes at the constraints. However, Hoffmann and Ribak (1991) showed that the residue has an additional property which can be used to generate the residue out of an unconstrained realization. As it turns out, the statistical properties of the residue are independent of the values <span class="math inline">\(c_i\)</span> and only depend on the constraints <span class="math inline">\(C_i\)</span>. This leads to the following method:</p>
+<ol type="1">
+<li>Generate an unconstrained Gaussian random field <span class="math inline">\(\tilde{\delta}\)</span> with the given power spectrum.</li>
+<li>Evaluate the constriants on the realization <span class="math inline">\(C_i[\tilde{\delta}] = \tilde{c}_i\)</span>.</li>
+<li>Construct the mean field corresponding to the values <span class="math inline">\(\tilde{c}_i\)</span> and evaluate the residue <span class="math display">\[F = \tilde{\delta} - \xi_i(\boldsymbol{q}) \xi_{ij}^{-1} \tilde{c}_j.\]</span></li>
+<li>Add the residue <span class="math inline">\(F\)</span> to the mean field <span class="math inline">\(\bar{\delta}\)</span> to obtain the constrained realization <span class="math display">\[\delta = F + \xi_i(\boldsymbol{q}) \xi_{ij}^{-1} c_j.\]</span></li>
 </ol>
 <h3 id="geometric-statistics">Geometric statistics</h3>
 <p>In 1936 Stephen Rice, while working at Bell-Labs, developed a framework to calculate the number densities of points in one-dimensional random fields. In the subsequent years, the results were extended to multi-dimensional random fields.</p>
@@ -191,24 +240,60 @@ n(\boldsymbol{q}) = \sum_{\boldsymbol{r} \in \Lambda(\lambda_1,\dots,\lambda_d)}
 \left[\frac{\partial f_j}{\partial q_i}\right]_{i,j=1,\dots,d}\right| \prod_{i=1}^d \delta_D^{(d)}(f_i(\boldsymbol{q})- \lambda_i)\right\rangle
 \end{align}\]</span> <em>in a regulating box <span class="math inline">\(L \subset \mathbb{R}^d\)</span> in the limit <span class="math inline">\(L \to \mathbb{R}^d\)</span>, since the expectation value is independent of the position by the statistical homogeneity.</em></p>
 <p>To illustrate Rice’s formula, consider a few examples:</p>
-<p><strong>Example 1:</strong> <em>The number density of level crossings <span class="math inline">\(\delta = \nu\)</span> in a one-dimensional random field <span class="math inline">\(\delta\)</span> correspond to the condition <span class="math inline">\(f_1[\delta] = \delta\)</span> and <span class="math inline">\(\lambda_1=\nu\)</span>. Using Rice’s formula we obtain</em> <span class="math display">\[\begin{align}
+<p><strong>Example 1:</strong> <em>The number density of level crossings <span class="math inline">\(\delta = \nu\)</span> in a one-dimensional random field <span class="math inline">\(\delta\)</span> correspond to the condition <span class="math inline">\(f_1[\delta] = \delta, \lambda_1=\nu\)</span>. Using Rice’s formula we obtain</em> <span class="math display">\[\begin{align}
 \mathcal{N}(\nu) &amp;= \langle |\delta&#39;(q)| \delta_D^{(1)}(\delta(q)-\nu) \rangle\\
 &amp;= \int |\delta&#39;(q)| p(\delta = \nu,\delta&#39;)\ \mathrm{d} \delta&#39;.
 \end{align}\]</span> <em>We can select for up- and down-crossings by restricting the integral over <span class="math inline">\(\delta&#39;\)</span> to <span class="math inline">\([0,\infty)\)</span> and <span class="math inline">\((-\infty,0]\)</span>.</em></p>
 <p><strong>Example 2:</strong> <em>The number density of critical points in a one-dimensional random field <span class="math inline">\(\delta\)</span> at function value <span class="math inline">\(\nu\in \mathbb{R}\)</span>. At a critical point, the first order derivative vanishes, i.e., consider the conditions <span class="math inline">\(f_1[\delta] = \delta&#39;\)</span> and <span class="math inline">\(\lambda_1=0\)</span>. The number density thus takes the form</em> <span class="math display">\[\begin{align}
 \mathcal{N}(\nu) &amp;= \langle \left| \delta&#39;&#39;(q)\right| \delta_D^{(1)}(\delta(q) - \nu)\delta_D^{(1)}(\delta&#39;(q)) \rangle\\
-&amp;= \int |\delta&#39;&#39;| p(\delta =\nu, \delta&#39; = 0,\delta&#39;&#39;) \mathrm{d}\delta&#39;&#39;.
+&amp;= \int |\delta&#39;&#39;| p(\delta =\nu, \delta&#39; = 0,\delta&#39;&#39;) \ \mathrm{d}\delta&#39;&#39;.
 \end{align}\]</span> <em>We can refine to the number density of maxima and minima by restricting the integral over <span class="math inline">\(\delta&#39;&#39;\)</span> to the intervals <span class="math inline">\((-\infty,0]\)</span> and <span class="math inline">\([0,\infty)\)</span>.</em></p>
 <p><strong>Example 3:</strong> <em>The number density of critical points in a two-dimensional random field <span class="math inline">\(\delta\)</span> at function value <span class="math inline">\(\nu \in \mathbb{R}\)</span>. At the critical point, the first order derivatives vanish, i.e., consider the conditions <span class="math inline">\(f_1[\delta] = \partial_1 \delta, f_2[\delta] = \partial_2 \delta\)</span> and <span class="math inline">\(\lambda_1=\lambda_2 = 0\)</span>. The number density thus takes the form</em> <span class="math display">\[\begin{align}
 \mathcal{N}(\nu) &amp;= \left\langle \left| \det \begin{pmatrix} \partial_1^2 \delta &amp; \partial_1 \partial_2 \delta \\ \partial_1 \partial_2 \delta &amp; \partial_2^2 \delta \end{pmatrix} \right| 
 \delta_D^{(1)}(\delta - \nu)\delta_D^{(1)}(\partial_1 \delta) \delta_D^{(1)}(\partial_2\delta) \right \rangle\\
 &amp;= \iiint |\partial_1^2 \delta\ \partial_2^2 \delta -(\partial_1 \partial_2 \delta)^2| p(\delta = \nu, \nabla \delta = 0, \partial_1^2 \delta, \partial_1 \partial_2 \delta, \partial_2^2 \delta) \
 \mathrm{d}(\partial_1^2 \delta)\ \mathrm{d}(\partial_1 \partial_2 \delta)\ \mathrm{d} (\partial_2^2 \delta).
-\end{align}\]</span> <em>We can refine to the number density of maxima, minima, and saddle points by restricting the integratin domain to the domains for which the Hessian as either two negative eigenvalues, two positive eigenvalues, or one negative and one positive eigenvalues.</em></p>
+\end{align}\]</span> <em>We can refine to the number density of maxima, minima, and saddle points by restricting the integration domain to the second order derivatives for which the Hessian <span class="math inline">\(H\)</span> as either two negative eigenvalues, two positive eigenvalues, or one negative and one positive eigenvalues, with the eigenvalues</em> <span class="math display">\[
+\lambda_{\pm} = \frac{1}{2} \left[ \partial_1^2 \delta +  \partial_2^2 \delta \pm \sqrt{4 (\partial_1 \partial_2 \delta)^2 + (\partial_1^2 \delta - \partial_2^2 \delta)^2}\right].
+\]</span></p>
 <h3 id="distribution-of-eigenvalue-fields">Distribution of eigenvalue fields</h3>
-<h3 id="generating-constraint-realizations">Generating constraint realizations</h3>
-<h3 id="cosmological-power-spectra">Cosmological power spectra</h3>
-<h3 id="non-gaussianities-and-phase-correlations">Non-Gaussianities and phase-correlations</h3>
-<h3 id="path-integrals-and-statistical-field-theory">Path integrals and statistical field theory</h3>
+<p>Given a Gaussian random field <span class="math inline">\(\delta:\mathbb{R}^d \to \mathbb{R}\)</span>, we evaluate the distribution of the eigenvalues of the Hessian for <span class="math inline">\(d=2\)</span> and <span class="math inline">\(d=3\)</span> dimensions. This is a famous result known as the Doroshkevich formula.</p>
+<p>The Hessian of a random field is fully determined by its second order derivatives <span class="math display">\[
+T_{ij} = \frac{\partial^2 \delta}{\partial q_i \partial q_j}.
+\]</span> In the two-dimensional case, the Hessian of the <span class="math inline">\(\delta\)</span> is determined by three degrees of freedom <span class="math inline">\(Y=(T_{11},T_{22},T_{12})\)</span>. The eigenvalues with <span class="math inline">\(\lambda_1 \geq \lambda_2\)</span> take the form <span class="math display">\[\begin{align}
+\lambda_1 &amp;= \frac{1}{2} \left( T_{11} + T_{22} + \sqrt{4T_{12}^2 +  (T_{11} - T_{22})^2}\right),\\
+\lambda_2 &amp;= \frac{1}{2} \left( T_{11} + T_{22} - \sqrt{4T_{12}^2 +  (T_{11} - T_{22})^2}\right),
+\end{align}\]</span> while the eigenvector matrix can be parametrized by the rotation matrix <span class="math display">\[\begin{align}
+V = \begin{pmatrix} \cos \omega &amp; \sin \omega \\ -\sin \omega &amp; \cos \omega\end{pmatrix} 
+\end{align}\]</span> for the orientation <span class="math inline">\(\omega \in (-\pi/2,\pi/2]\)</span>.</p>
+<p>The derivatives are linear statistics of the random field. The statistic <span class="math inline">\(Y\)</span> is thus normally distributed. The covariance matrix is of the form <span class="math display">\[\begin{align}
+M = \frac{\sigma_2^2}{8} \begin{pmatrix} 3 &amp; 1 &amp; 0 \\ 1 &amp; 3 &amp; 0 \\ 0 &amp; 0 &amp; 1\end{pmatrix}
+\end{align}\]</span> with the moment <span class="math display">\[\begin{align}
+\sigma_2^2 = \int k^4 P(k)\mathrm{d}\boldsymbol{k}.
+\end{align}\]</span></p>
+<p>The distribution of the statistic thus takes the form <span class="math display">\[
+p(T_{11},T_{22},T_{12}) = \frac{2\sqrt{2}}{\pi^{3/2} \sigma_2^3} e^{-\frac{3 k_1^2 - 8 k_2}{2 \sigma_2^2}}
+\]</span> with the rotationally invariant combinations <span class="math display">\[\begin{align}
+k_1 &amp;\equiv \text{Tr}(H) = T_{11}+T_{22} = \lambda_1 + \lambda_2,\\
+k_2 &amp;\equiv \det(H) = T_{11}T_{22}-T_{12}^2 = \lambda_1 \lambda_2.
+\end{align}\]</span> The invariance of the exponent under rotations follows from the isotropy of the random field.</p>
+<p>To obtain the distribution for the eigenvalue fields, we express the linear statistic <span class="math inline">\(Y\)</span> in terms of the eigenvalues and the orientation. The equation <span class="math display">\[\begin{align}
+\begin{pmatrix} T_{11} &amp; T_{12} \\ T_{12} &amp; T_{22}\end{pmatrix} = V \begin{pmatrix} \lambda_1 &amp; 0 \\ 0 &amp; \lambda_2 \end{pmatrix} V^T
+\end{align}\]</span> leads to the correspondence <span class="math display">\[
+(T_{11},T_{22},T_{12}) = (\lambda_1 \cos^2 \omega + \lambda_2 \sin^2 \omega, \lambda_1 \sin^2\omega + \lambda_2 \cos^2 \omega, (\lambda_2-\lambda_1) \cos \omega \sin \omega).
+\]</span></p>
+<p>The measure transforms as <span class="math inline">\(\mathrm{d}T_{11} \wedge \mathrm{d}T_{22} \wedge \mathrm{d}T_{12} = (\lambda_1 - \lambda_2) \mathrm{d}\lambda_1 \wedge \mathrm{d}\lambda_2 \wedge \mathrm{d} \omega\)</span>, leading to the distribution</p>
+<p><span class="math display">\[
+p(\lambda_1,\lambda_2) = \frac{2\sqrt{2}}{\pi^{1/2} \sigma_2^3} e^{-\frac{3 k_1^2 - 8 k_2}{2 \sigma_2^2}}(\lambda_1-\lambda_2).
+\]</span></p>
+<p>The distribution of the ordered eigenvalues (<span class="math inline">\(\lambda_1 \geq \lambda_2 \geq \lambda_3\)</span>) of a three-dimensional Gaussian random field, first derived in 1970 by Doroshkevich, follow a similar distribution <span class="math display">\[
+p(\lambda_1,\lambda_2,\lambda_3) = \frac{15^3}{16\sqrt{5}\pi^3}e^{-\frac{3 (2k_1^2 - 5 k_2)}{2\sigma_2^2}}(\lambda_1-\lambda_2)(\lambda_1 - \lambda_3)(\lambda_2 - \lambda_3),
+\]</span> with the rotationally invariant forms <span class="math display">\[\begin{align}
+k_1 &amp;\equiv \lambda_1 + \lambda_2 + \lambda_3,\\
+k_2 &amp;\equiv \lambda_1 \lambda_2 + \lambda_1 \lambda_3 + \lambda_2 \lambda_3.
+\end{align}\]</span></p>
+<!---### Cosmological power spectra-->
+<!---### Non-Gaussianities and phase-correlations-->
+<!---### Path integrals and statistical field theory-->
 </body>
 </html>
